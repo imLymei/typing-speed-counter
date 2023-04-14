@@ -7,8 +7,13 @@ export default function Home() {
 	const [allLetters, setAllLetters] = useState([]);
 	const [typedLetters, setTypedLetters] = useState([]);
 	const [spacing, setSpacing] = useState(0);
+	const [wordsPerMinute, setWordsPerMinute] = useState(0);
+	const [totalTime, setTotalTime] = useState(0);
 
-	let actualIndex = 0;
+	let done = false;
+
+	let letterLength = 0;
+	let score = 0;
 
 	const allWords = [
 		'casa',
@@ -45,42 +50,124 @@ export default function Home() {
 		'doce',
 	];
 
-	function saveActualLetters(myWords) {
-		let newArray = [];
-		myWords.map((word, index) => {
-			if (index != 0 && index != myWords.length) {
-				newArray.push(' ');
-			}
-			const letters = word.split('');
-			newArray.push(...letters);
-		});
-		setAllLetters([...newArray]);
+	function randomNumberBetween(min, max) {
+		return Math.round(min + Math.random() * (max - min));
 	}
 
-	useEffect(() => {
-		setWords(allWords);
-		saveActualLetters(allWords);
+	function formatTime(time) {
+		const minutes = formatTimeSegment(Math.floor(time / 60));
+		const secondsNumber = time % 60;
+		const seconds = formatTimeSegment(formatDecimal(secondsNumber, 2));
+
+		return `${minutes}:${seconds}`;
+	}
+
+	function formatTimeSegment(time) {
+		if (time < 10) {
+			return '0' + time;
+		}
+		return time;
+	}
+
+	function formatDecimal(number, decimal) {
+		if (number == 0) return 0;
+		const realDecimal = Math.pow(10, decimal);
+		return Math.round(number * realDecimal) / realDecimal;
+	}
+
+	function main() {
+		function selectWords() {
+			let selected = [];
+			let chosen = 0;
+			for (let i = 0; i < 30; i++) {
+				do {
+					chosen = randomNumberBetween(0, allWords.length - 1);
+				} while (selected.includes(chosen));
+				selected.push(allWords[chosen]);
+			}
+			setWords([...selected]);
+			return selected;
+		}
+
+		function saveActualLetters(myWords) {
+			let newArray = [];
+			myWords.map((word, index) => {
+				if (index != 0 && index != myWords.length) {
+					newArray.push(' ');
+				}
+				const letters = word.split('');
+				newArray.push(...letters);
+			});
+			setAllLetters([...newArray]);
+			letterLength = newArray.length;
+			return newArray;
+		}
+
+		let realWords;
+		let everyLetters;
+
+		if (done == false) {
+			realWords = selectWords();
+			console.log(realWords);
+
+			everyLetters = saveActualLetters(realWords);
+			console.log(everyLetters);
+			done = true;
+		} else {
+			realWords = words;
+			everyLetters = allLetters;
+		}
+
 		const typed = [...typedLetters];
+		let startTime;
+
 		document.addEventListener('keyup', function (event) {
 			if ((event.key >= 'a' && event.key <= 'z') || event.key == ' ' || event.key == 'Backspace') {
+				if (typed.length == 0) {
+					startTime = Date.now();
+				}
 				if (event.key == 'Backspace') {
 					typed.pop();
 				} else {
-					typed.push(event.key);
+					if (typed.length < letterLength - 1) {
+						typed.push(event.key);
+					} else if (typed.length == letterLength - 1) {
+						typed.push(event.key);
+						const finalTime = Date.now();
+						let wpm = 0;
+						if (score == 0) {
+							setTotalTime((finalTime - startTime) / 1000);
+							const tTime = (finalTime - startTime) / 1000;
+							everyLetters.map((letter, index) => {
+								if (letter == typed[index]) {
+									console.log(everyLetters);
+									score++;
+								}
+							});
+							console.log(tTime);
+							console.log(score);
+							setWordsPerMinute(score / (tTime / 60));
+							wpm = score / (tTime / 60);
+						}
+						console.log(wpm);
+					}
 				}
 				setTypedLetters([...typed]);
 			} else {
 			}
-			setSpacing((typedLetters.length / allLetters.length) * 100);
-			console.log(typedLetters.length);
-			console.log(allLetters.length);
+			setSpacing((typed.length / letterLength) * 100);
 		});
-	}, []);
+	}
+
+	useEffect(main, []);
 
 	return (
-		<main className='flex min-h-screen flex-col items-center justify-between p-24 bg-black'>
-			<div className='border overflow-hidden border-white p-6 w-[66vw] relative'>
-				<div className={`${spacing <= 10 ? 'text-green-500' : ''} flex text-white/30`}>
+		<main className='flex min-h-screen flex-col items-center justify-between p-24 bg-black' onLoad={main}>
+			<div className='border overflow-hidden border-white h-16 w-[66vw] relative'>
+				<div
+					className={`${
+						spacing >= 50 ? 'right-6' : 'left-6'
+					} flex text-white/30 absolute top-1/2 -translate-y-1/2`}>
 					{allLetters.map((letter, letterIndex) => {
 						return (
 							<p
@@ -97,11 +184,11 @@ export default function Home() {
 										className={`${
 											typedLetters.length - 1 >= letterIndex
 												? typedLetters[letterIndex] == letter
-													? 'text-green-500'
-													: 'bg-red-500'
-												: ''
-										} text-transparent`}>
-										x
+													? 'text-transparent'
+													: 'text-red-500'
+												: 'text-transparent'
+										}`}>
+										_
 									</span>
 								) : (
 									letter
@@ -111,6 +198,11 @@ export default function Home() {
 					})}
 				</div>
 			</div>
+			<h2 className='absolute top-12 text-2xl'>{`Tempo: ${formatTime(totalTime)}`}</h2>
+			<h2 className='absolute top-44 text-4xl'>{`Pontuação: ${formatDecimal(
+				wordsPerMinute,
+				2
+			)} palavras por minuto`}</h2>
 		</main>
 	);
 }
