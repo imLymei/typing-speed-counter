@@ -10,6 +10,8 @@ export default function Home() {
 	const [wordsPerMinute, setWordsPerMinute] = useState(0);
 	const [totalTime, setTotalTime] = useState(0);
 
+	const [restart, setRestart] = useState(false);
+
 	let done = false;
 
 	let letterLength = 0;
@@ -159,10 +161,10 @@ export default function Home() {
 		});
 	}
 
-	useEffect(main, []);
+	useEffect(main, [restart]);
 
 	return (
-		<main className='flex min-h-screen flex-col items-center justify-between p-24 bg-black' onLoad={main}>
+		<main className='flex min-h-screen flex-col items-center justify-center p-24 bg-black' onLoad={main}>
 			<div className='border overflow-hidden border-white h-16 w-[66vw] relative'>
 				<div
 					className={`${
@@ -198,8 +200,8 @@ export default function Home() {
 					})}
 				</div>
 			</div>
-			<h2 className='absolute top-12 text-2xl'>{`Tempo: ${formatTime(totalTime)}`}</h2>
-			<h2 className='absolute top-44 text-4xl'>{`Pontuação: ${formatDecimal(
+			<h2 className='absolute top-[40vh] text-2xl'>{`Tempo: ${formatTime(totalTime)}`}</h2>
+			<h2 className='absolute top-[60vh] text-4xl'>{`Pontuação: ${formatDecimal(
 				wordsPerMinute,
 				2
 			)} palavras por minuto`}</h2>
